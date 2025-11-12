@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS players (
   team TEXT,
   position TEXT,
   jersey_number TEXT,
-  height NUMERIC,
-  weight NUMERIC,
+  height TEXT,
+  weight TEXT,
   year TEXT, -- Freshman, Sophomore, etc.
   image_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

@@ -7,7 +7,7 @@ export class ESPNService {
     league = SPORT_CONFIG.league,
     params: { limit?: number; active?: boolean } = {}
   ) {
-    const limit = params.limit ?? 100;
+    const limit = params.limit ?? 1000;
     const active = params.active ?? true;
     return `${CORE_API_BASE}/${sport}/${league}/seasons/${season}/athletes?limit=${limit}&active=${active}`;
   }

@@ -15,9 +15,9 @@ export class SupabaseService {
       team: player.team?.displayName || "Unknown",
       position: player.position?.abbreviation || "N/A",
       jersey_number: player.jersey || "N/A",
-      height: player.height || null,
-      weight: player.weight || null,
-      year: player.class?.year || null,
+      height: player.displayHeight || player.height || null,
+      weight: player.displayWeight || player.weight || null,
+      year: player.experience?.displayValue || null,
       image_url: player.headshot?.href || null,
     }));
 

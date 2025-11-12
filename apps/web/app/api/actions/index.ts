@@ -5,13 +5,26 @@ import { createClient } from "../supabase";
 const supabase = createClient();
 
 /**
- * Fetches all players from the database
+ * Fetches all players from the database who have stats
  */
 export async function getPlayers() {
   try {
+    // Get all unique player IDs that have stats
+    const { data: statsData, error: statsError } = await supabase
+      .from("player_stats")
+      .select("espn_player_id");
+
+    if (statsError) {
+      throw statsError;
+    }
+
+    const playerIdsWithStats = [...new Set(statsData?.map(s => s.espn_player_id) || [])];
+
+    // Fetch players who have stats
     const { data, error } = await supabase
       .from("players")
       .select("*")
+      .in("espn_player_id", playerIdsWithStats)
       .order("name");
 
     if (error) {
@@ -34,7 +47,7 @@ export async function getPlayerStats(playerIds: string[]) {
     const { data, error } = await supabase
       .from("player_stats")
       .select("*")
-      .in("player_id", playerIds);
+      .in("espn_player_id", playerIds);
 
     if (error) {
       throw error;
@@ -57,29 +70,37 @@ export async function getPlayerWithStats(playerId: string) {
     const { data: playerData, error: playerError } = await supabase
       .from("players")
       .select("*")
-      .eq("player_id", playerId)
+      .eq("espn_player_id", playerId)
       .single();
 
     if (playerError) {
+      console.error("Player error:", playerError);
       throw playerError;
     }
 
-    // Fetch player stats
+    console.log("Player data for", playerId, ":", playerData);
+
+    // Fetch player stats for this player (could have multiple rows for Home/Away)
+    console.log("Querying player_stats with espn_player_id:", playerId);
     const { data: statsData, error: statsError } = await supabase
       .from("player_stats")
       .select("*")
-      .eq("player_id", playerId)
-      .single();
+      .eq("espn_player_id", playerId);
+
+    console.log("Stats query result - data:", statsData, "error:", statsError);
 
     if (statsError && statsError.code !== "PGRST116") {
       // PGRST116 is "No rows returned"
+      console.error("Stats error:", statsError);
       throw statsError;
     }
+
+    console.log("Stats data for", playerId, ":", statsData);
 
     // Combine the data
     return {
       ...playerData,
-      stats: statsData || null,
+      stats: statsData || [],
     };
   } catch (error) {
     console.error(`Error fetching player data for ${playerId}:`, error);
