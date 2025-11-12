@@ -7,6 +7,6 @@ export const SPORT_CONFIG = {
 };
 
 export const SUPABASE_CONFIG = {
-  url: "http://localhost:54321",
-  serviceRoleKey: "sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz",
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:54321",
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
 };
