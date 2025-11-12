@@ -369,31 +369,225 @@
 
 .visualizationArea {
   background-color: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  animation: fadeIn 0.5s ease-in 0.4s both;
 }
 
 .visualizationArea h2 {
   font-size: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.chartWrapper {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.chartColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .charts {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
-.chartPlaceholder {
-  height: 300px;
-  background-color: #f9f9f9;
-  border: 1px dashed #ddd;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.chartContainer {
+  background-color: #fafafa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chartContainer h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.customTooltip {
+  background-color: white;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+}
+
+.tooltipLabel {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 0.5rem 0;
+}
+
+.tooltipDescription {
+  font-size: 0.85rem;
   color: #666;
+  line-height: 1.4;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tooltipValues {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tooltipValues p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.tooltipValues strong {
+  font-weight: 600;
+}
+
+.metricInfo {
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.metricInfo h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 1.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metricInfoItem {
+  margin-bottom: 2rem;
+}
+
+.metricInfoItem:last-child {
+  margin-bottom: 0;
+}
+
+.metricInfoItem strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.metricInfoItem .formula {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #667eea;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(102, 126, 234, 0.1);
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.metricInfoItem p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #666;
+}
+
+.strengthsSection {
+  margin-top: 2.5rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.strengthsSection h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 1.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.strengthsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.strengthCard {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.strengthCard h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 1rem 0;
+}
+
+.strengthsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.strengthBadge {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  background-color: white;
+  color: #667eea;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.noStrengths {
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.metricsLegend {
+  background-color: #f9f9f9;
+  border-left: 4px solid #667eea;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.metricsLegend p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.metricsLegend p:last-child {
+  margin-bottom: 0;
+}
+
+.metricsLegend strong {
+  color: #667eea;
+  font-weight: 700;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -406,6 +600,100 @@
   .visualizationArea {
     background-color: #2a2a2a;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .visualizationArea h2 {
+    color: #e0e0e0;
+  }
+
+  .chartContainer {
+    background-color: #333;
+  }
+
+  .chartContainer h3 {
+    color: #8b9bea;
+  }
+
+  .customTooltip {
+    background-color: #2a2a2a;
+    border-color: #8b9bea;
+  }
+
+  .tooltipLabel {
+    color: #8b9bea;
+  }
+
+  .tooltipDescription {
+    color: #ccc;
+    border-bottom-color: #444;
+  }
+
+  .tooltipValues p {
+    color: #e0e0e0;
+  }
+
+  .metricInfo {
+    background-color: #333;
+    border-left-color: #8b9bea;
+  }
+
+  .metricInfo h4 {
+    color: #8b9bea;
+  }
+
+  .metricInfoItem {
+    border-bottom-color: #444;
+  }
+
+  .metricInfoItem strong {
+    color: #e0e0e0;
+  }
+
+  .metricInfoItem .formula {
+    color: #8b9bea;
+    background-color: rgba(139, 155, 234, 0.15);
+  }
+
+  .metricInfoItem p {
+    color: #ccc;
+  }
+
+  .strengthsSection {
+    border-top: none;
+  }
+
+  .strengthsSection h3 {
+    color: #8b9bea;
+  }
+
+  .strengthCard {
+    background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  }
+
+  .strengthCard h4 {
+    color: #8b9bea;
+  }
+
+  .strengthBadge {
+    background-color: #333;
+    color: #8b9bea;
+  }
+
+  .noStrengths {
+    color: #999;
+  }
+
+  .metricsLegend {
+    background-color: #333;
+    border-left-color: #8b9bea;
+  }
+
+  .metricsLegend p {
+    color: #ccc;
+  }
+
+  .metricsLegend strong {
+    color: #8b9bea;
   }
 
   .select {
@@ -438,12 +726,6 @@
   .comparisonTable td:first-child {
     color: white;
   }
-
-  .chartPlaceholder {
-    background-color: #333;
-    border-color: #444;
-    color: #aaa;
-  }
 }
 
 @media (max-width: 768px) {
@@ -457,5 +739,21 @@
 
   .playerSelector {
     width: 100%;
+  }
+
+  .charts {
+    grid-template-columns: 1fr;
+  }
+
+  .chartWrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .chartColumn {
+    width: 100%;
+  }
+
+  .strengthsGrid {
+    grid-template-columns: 1fr;
   }
 }

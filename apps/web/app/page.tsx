@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import { Button } from "@takehome/ui/button";
 import { getPlayers, comparePlayers } from "./api/actions";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 type Player = {
   id: number;
@@ -154,6 +155,69 @@ export default function Home() {
     const result = isBetterStat(stat1, stat2, lowerIsBetter);
     return result === true ? styles.betterStat : '';
   };
+
+  // Calculate advanced metrics
+  const calculateAdvancedMetrics = (stats: any) => {
+    if (!stats) return null;
+
+    const pts = parseFloat(stats.points_per_game) || 0;
+    const reb = parseFloat(stats.rebounds_per_game) || 0;
+    const ast = parseFloat(stats.assists_per_game) || 0;
+    const stl = parseFloat(stats.steals_per_game) || 0;
+    const blk = parseFloat(stats.blocks_per_game) || 0;
+    const to = parseFloat(stats.turnovers_per_game) || 0;
+    const pf = parseFloat(stats.fouls_per_game) || 0;
+    const min = parseFloat(stats.minutes_per_game) || 1;
+    const fgPct = parseFloat(stats.field_goal_pct) || 0;
+
+    // Efficiency Rating: (PTS + REB + AST + STL + BLK - TO) / MIN
+    const efficiencyRating = ((pts + reb + ast + stl + blk - to) / min).toFixed(2);
+
+    // True Shooting %: Approximation using PTS and FG%
+    const estimatedFGA = fgPct > 0 ? pts / (fgPct / 100) : 0;
+    const trueShootingPct = estimatedFGA > 0 ? ((pts / (2 * estimatedFGA)) * 100).toFixed(1) : '0.0';
+
+    // Assist-to-Turnover Ratio
+    const astToRatio = to > 0 ? (ast / to).toFixed(2) : ast.toFixed(2);
+
+    // Defensive Impact Score: (STL + BLK - PF) per game
+    // Rewards defensive stats, penalizes fouls
+    const defensiveImpact = (stl + blk - pf).toFixed(2);
+
+    return {
+      efficiencyRating,
+      trueShootingPct,
+      astToRatio,
+      defensiveImpact
+    };
+  };
+
+  const player1Advanced = calculateAdvancedMetrics(player1Stats);
+  const player2Advanced = calculateAdvancedMetrics(player2Stats);
+
+  // Calculate player strengths based on their stats
+  const getPlayerStrengths = (stats: any, advanced: any) => {
+    if (!stats || !advanced) return [];
+
+    const strengths = [
+      { label: 'Scoring', value: parseFloat(stats.points_per_game) || 0, threshold: 15 },
+      { label: 'Rebounding', value: parseFloat(stats.rebounds_per_game) || 0, threshold: 7 },
+      { label: 'Playmaking', value: parseFloat(stats.assists_per_game) || 0, threshold: 4 },
+      { label: 'Shooting', value: parseFloat(stats.field_goal_pct) || 0, threshold: 45 },
+      { label: 'Defense', value: parseFloat(advanced.defensiveImpact) || 0, threshold: 0.5 },
+      { label: 'Efficiency', value: parseFloat(advanced.efficiencyRating) || 0, threshold: 0.8 },
+    ];
+
+    // Sort by value and return top 3
+    return strengths
+      .filter(s => s.value >= s.threshold)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3)
+      .map(s => s.label);
+  };
+
+  const player1Strengths = player1Data && player1Advanced ? getPlayerStrengths(player1Stats, player1Advanced) : [];
+  const player2Strengths = player2Data && player2Advanced ? getPlayerStrengths(player2Stats, player2Advanced) : [];
 
   return (
     <div className={styles.container}>
@@ -340,14 +404,118 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={styles.visualizationArea}>
-          <h2>Visualizations</h2>
-          <div className={styles.charts}>
-            <div className={styles.chartPlaceholder}>
-              <p>Player comparison chart will be displayed here</p>
+        {player1Data && player2Data && player1Advanced && player2Advanced && (
+          <section className={styles.visualizationArea}>
+            <h2>Advanced Metrics Comparison</h2>
+            <div className={styles.chartWrapper}>
+              <div className={styles.chartColumn}>
+                <div className={styles.chartContainer}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={[
+                        { 
+                          metric: 'Efficiency Rating', 
+                          [player1Data.name]: parseFloat(player1Advanced.efficiencyRating),
+                          [player2Data.name]: parseFloat(player2Advanced.efficiencyRating)
+                        },
+                        { 
+                          metric: 'True Shooting %', 
+                          [player1Data.name]: parseFloat(player1Advanced.trueShootingPct),
+                          [player2Data.name]: parseFloat(player2Advanced.trueShootingPct)
+                        },
+                        { 
+                          metric: 'Ast/TO Ratio', 
+                          [player1Data.name]: parseFloat(player1Advanced.astToRatio),
+                          [player2Data.name]: parseFloat(player2Advanced.astToRatio)
+                        },
+                        { 
+                          metric: 'Defensive Impact', 
+                          [player1Data.name]: parseFloat(player1Advanced.defensiveImpact),
+                          [player2Data.name]: parseFloat(player2Advanced.defensiveImpact)
+                        }
+                      ]}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                      <XAxis dataKey="metric" stroke="#666" />
+                      <YAxis stroke="#666" />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: '2px solid #667eea',
+                          borderRadius: '8px',
+                          padding: '0.75rem'
+                        }}
+                        cursor={{ fill: 'rgba(102, 126, 234, 0.1)' }}
+                        formatter={(value: number) => value.toFixed(2)}
+                      />
+                      <Legend />
+                      <Bar dataKey={player2Data.name} fill="#764ba2" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey={player1Data.name} fill="#667eea" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className={styles.strengthsSection}>
+                  <h3>Player Strengths</h3>
+                  <div className={styles.strengthsGrid}>
+                    <div className={styles.strengthCard}>
+                      <h4>{player1Data.name}</h4>
+                      <div className={styles.strengthsList}>
+                        {player1Strengths.length > 0 ? (
+                          player1Strengths.map((strength, index) => (
+                            <span key={index} className={styles.strengthBadge}>
+                              {strength}
+                            </span>
+                          ))
+                        ) : (
+                          <p className={styles.noStrengths}>No significant strengths</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className={styles.strengthCard}>
+                      <h4>{player2Data.name}</h4>
+                      <div className={styles.strengthsList}>
+                        {player2Strengths.length > 0 ? (
+                          player2Strengths.map((strength, index) => (
+                            <span key={index} className={styles.strengthBadge}>
+                              {strength}
+                            </span>
+                          ))
+                        ) : (
+                          <p className={styles.noStrengths}>No significant strengths</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Metric Guide</h4>
+                <div className={styles.metricInfoItem}>
+                  <strong>Efficiency Rating</strong>
+                  <p className={styles.formula}>(PTS + REB + AST + STL + BLK - TO) / MIN</p>
+                  <p>Overall productivity per minute</p>
+                </div>
+                <div className={styles.metricInfoItem}>
+                  <strong>True Shooting %</strong>
+                  <p className={styles.formula}>Points / (2 × FGA)</p>
+                  <p>Shooting efficiency across all shot types</p>
+                </div>
+                <div className={styles.metricInfoItem}>
+                  <strong>Ast/TO Ratio</strong>
+                  <p className={styles.formula}>AST / TO</p>
+                  <p>Ball handling & decision making</p>
+                </div>
+                <div className={styles.metricInfoItem}>
+                  <strong>Defensive Impact</strong>
+                  <p className={styles.formula}>STL + BLK - PF</p>
+                  <p>Defensive contribution minus fouls</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
     </div>
   );
