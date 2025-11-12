@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import { Button } from "@takehome/ui/button";
 import { getPlayers, comparePlayers } from "./api/actions";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 type Player = {
   id: number;
@@ -131,6 +131,28 @@ export default function Home() {
         ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1)
         : '-';
     });
+
+    // Handle made-attempted string fields by averaging the components
+    const stringFields = ['field_goals_made_attempted', 'three_point_made_attempted', 'free_throws_made_attempted'];
+    stringFields.forEach(field => {
+      const values = stats.map(s => s[field as keyof PlayerStats]).filter(v => v !== null) as string[];
+      if (values.length > 0) {
+        const madeValues: number[] = [];
+        const attemptedValues: number[] = [];
+        values.forEach(v => {
+          const parts = v.split('-');
+          if (parts.length === 2 && parts[0] && parts[1]) {
+            madeValues.push(parseFloat(parts[0]) || 0);
+            attemptedValues.push(parseFloat(parts[1]) || 0);
+          }
+        });
+        const avgMade = madeValues.length > 0 ? (madeValues.reduce((a, b) => a + b, 0) / madeValues.length).toFixed(1) : '0';
+        const avgAttempted = attemptedValues.length > 0 ? (attemptedValues.reduce((a, b) => a + b, 0) / attemptedValues.length).toFixed(1) : '0';
+        aggregated[field] = `${avgMade}-${avgAttempted}`;
+      } else {
+        aggregated[field] = '0-0';
+      }
+    });
     
     return aggregated;
   };
@@ -173,9 +195,22 @@ export default function Home() {
     // Efficiency Rating: (PTS + REB + AST + STL + BLK - TO) / MIN
     const efficiencyRating = ((pts + reb + ast + stl + blk - to) / min).toFixed(2);
 
-    // True Shooting %: Approximation using PTS and FG%
-    const estimatedFGA = fgPct > 0 ? pts / (fgPct / 100) : 0;
-    const trueShootingPct = estimatedFGA > 0 ? ((pts / (2 * estimatedFGA)) * 100).toFixed(1) : '0.0';
+    // True Shooting %: Using actual FGA from the field_goals_made_attempted stat
+    const fgMadeAttempted = stats.field_goals_made_attempted?.split('-') || ['0', '0'];
+    const fgm = parseFloat(fgMadeAttempted[0]) || 0;
+    const fga = parseFloat(fgMadeAttempted[1]) || 0;
+    const ftaMade = stats.free_throws_made_attempted?.split('-') || ['0', '0'];
+    const ftm = parseFloat(ftaMade[0]) || 0;
+    const fta = parseFloat(ftaMade[1]) || 0;
+    
+    // TS% = PTS / (2 * (FGA + 0.44 * FTA)) * 100
+    // Normalize to 0-1 scale (divide by 100) to match other metrics
+    const tsaDenominator = 2 * (fga + 0.44 * fta);
+    const trueShootingPct = tsaDenominator > 0 
+      ? (pts / tsaDenominator).toFixed(3)
+      : '0.000';
+    
+    console.log('TS% Debug:', { pts, fga, fta, tsaDenominator, trueShootingPct });
 
     // Assist-to-Turnover Ratio
     const astToRatio = to > 0 ? (ast / to).toFixed(2) : ast.toFixed(2);
@@ -200,12 +235,12 @@ export default function Home() {
     if (!stats || !advanced) return [];
 
     const strengths = [
-      { label: 'Scoring', value: parseFloat(stats.points_per_game) || 0, threshold: 15 },
-      { label: 'Rebounding', value: parseFloat(stats.rebounds_per_game) || 0, threshold: 7 },
-      { label: 'Playmaking', value: parseFloat(stats.assists_per_game) || 0, threshold: 4 },
-      { label: 'Shooting', value: parseFloat(stats.field_goal_pct) || 0, threshold: 45 },
-      { label: 'Defense', value: parseFloat(advanced.defensiveImpact) || 0, threshold: 0.5 },
-      { label: 'Efficiency', value: parseFloat(advanced.efficiencyRating) || 0, threshold: 0.8 },
+      { label: 'Scoring', value: parseFloat(stats.points_per_game) || 0, threshold: 12 },
+      { label: 'Rebounding', value: parseFloat(stats.rebounds_per_game) || 0, threshold: 6 },
+      { label: 'Playmaking', value: parseFloat(stats.assists_per_game) || 0, threshold: 3 },
+      { label: 'Shooting', value: parseFloat(stats.field_goal_pct) || 0, threshold: 42 },
+      { label: 'Defense', value: parseFloat(advanced.defensiveImpact) || 0, threshold: 0.3 },
+      { label: 'Impact', value: parseFloat(advanced.efficiencyRating) || 0, threshold: 0.7 },
     ];
 
     // Sort by value and return top 3
@@ -414,7 +449,7 @@ export default function Home() {
                     <BarChart
                       data={[
                         { 
-                          metric: 'Efficiency Rating', 
+                          metric: 'Per-Minute Impact', 
                           [player1Data.name]: parseFloat(player1Advanced.efficiencyRating),
                           [player2Data.name]: parseFloat(player2Advanced.efficiencyRating)
                         },
@@ -434,24 +469,24 @@ export default function Home() {
                           [player2Data.name]: parseFloat(player2Advanced.defensiveImpact)
                         }
                       ]}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      margin={{ top: 20, right: 50, left: 20, bottom: 5 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                      <XAxis dataKey="metric" stroke="#666" />
-                      <YAxis stroke="#666" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#fff', 
-                          border: '2px solid #667eea',
-                          borderRadius: '8px',
-                          padding: '0.75rem'
-                        }}
-                        cursor={{ fill: 'rgba(102, 126, 234, 0.1)' }}
-                        formatter={(value: number) => value.toFixed(2)}
-                      />
-                      <Legend />
-                      <Bar dataKey={player2Data.name} fill="#764ba2" radius={[8, 8, 0, 0]} />
-                      <Bar dataKey={player1Data.name} fill="#667eea" radius={[8, 8, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis dataKey="metric" stroke="#666" />
+                    <YAxis stroke="#666" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '2px solid #667eea',
+                        borderRadius: '8px',
+                        padding: '0.75rem'
+                      }}
+                      cursor={{ fill: 'rgba(102, 126, 234, 0.1)' }}
+                      formatter={(value: number) => value.toFixed(2)}
+                    />
+                    <Legend />
+                    <Bar dataKey={player2Data.name} fill="#764ba2" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey={player1Data.name} fill="#667eea" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -493,14 +528,14 @@ export default function Home() {
               <div className={styles.metricInfo}>
                 <h4>Metric Guide</h4>
                 <div className={styles.metricInfoItem}>
-                  <strong>Efficiency Rating</strong>
+                  <strong>Per-Minute Impact</strong>
                   <p className={styles.formula}>(PTS + REB + AST + STL + BLK - TO) / MIN</p>
                   <p>Overall productivity per minute</p>
                 </div>
                 <div className={styles.metricInfoItem}>
                   <strong>True Shooting %</strong>
-                  <p className={styles.formula}>Points / (2 × FGA)</p>
-                  <p>Shooting efficiency across all shot types</p>
+                  <p className={styles.formula}>PTS / (2 × (FGA + 0.44 × FTA))</p>
+                  <p>Shooting efficiency (normalized to 0-1 scale)</p>
                 </div>
                 <div className={styles.metricInfoItem}>
                   <strong>Ast/TO Ratio</strong>
