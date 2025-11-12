@@ -1,0 +1,27 @@
+-- Create player_stats table
+CREATE TABLE IF NOT EXISTS player_stats (
+  id SERIAL PRIMARY KEY,
+  espn_player_id TEXT NOT NULL REFERENCES players (espn_player_id) ON DELETE CASCADE,
+  season TEXT NOT NULL,
+  game_location TEXT NOT NULL,
+  games_played NUMERIC,
+  minutes_per_game NUMERIC,
+  field_goals_made_attempted TEXT,
+  field_goal_pct NUMERIC,
+  three_point_made_attempted TEXT,
+  three_point_pct NUMERIC,
+  free_throws_made_attempted TEXT,
+  free_throw_pct NUMERIC,
+  offensive_rebounds_per_game NUMERIC,
+  defensive_rebounds_per_game NUMERIC,
+  rebounds_per_game NUMERIC,
+  assists_per_game NUMERIC,
+  blocks_per_game NUMERIC,
+  steals_per_game NUMERIC,
+  fouls_per_game NUMERIC,
+  turnovers_per_game NUMERIC,
+  points_per_game NUMERIC,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE (espn_player_id, season, game_location)
+);
